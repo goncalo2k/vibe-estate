@@ -25,7 +25,7 @@ export async function handleScheduled(
   }
 }
 
-async function runAnalysisBatch(env: Bindings) {
+export async function runAnalysisBatch(env: Bindings) {
   const { analyzeProperty } = await import("../services/analysis.js");
   const { generateId } = await import("../db/queries.js");
   const { rowToProperty } = await import("../db/queries.js");
@@ -43,7 +43,11 @@ async function runAnalysisBatch(env: Bindings) {
   for (const row of unanalyzed.results) {
     try {
       const property = rowToProperty(row as any);
-      const analysis = await analyzeProperty(property, env.ANTHROPIC_API_KEY);
+      const analysis = await analyzeProperty(property, {
+            apiKey: env.LLM_API_KEY,
+            baseUrl: env.LLM_BASE_URL,
+            model: env.LLM_MODEL,
+          });
       const id = generateId();
       await db
         .prepare(
@@ -73,7 +77,7 @@ async function runAnalysisBatch(env: Bindings) {
   }
 }
 
-async function markStaleProperties(env: Bindings) {
+export async function markStaleProperties(env: Bindings) {
   await env.DB
     .prepare(
       `UPDATE properties

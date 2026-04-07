@@ -29,11 +29,15 @@ interface AnalysisResult {
   model: string;
 }
 
-const MODEL = "claude-sonnet-4-20250514";
+interface LlmConfig {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+}
 
 export async function analyzeProperty(
   property: PropertyForAnalysis,
-  apiKey: string
+  llm: LlmConfig
 ): Promise<AnalysisResult> {
   const priceEuros = property.price_cents / 100;
   const pricePerM2 =
@@ -67,15 +71,16 @@ Respond with valid JSON only, no markdown:
   "cons": ["con1", "con2", ...up to 5]
 }`;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const endpoint = `${llm.baseUrl.replace(/\/$/, "")}/v1/messages`;
+  const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": apiKey,
+      "x-api-key": llm.apiKey,
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: llm.model,
       max_tokens: 1024,
       messages: [{ role: "user", content: prompt }],
     }),
@@ -83,7 +88,7 @@ Respond with valid JSON only, no markdown:
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Anthropic API error (${response.status}): ${error}`);
+    throw new Error(`LLM API error (${response.status}): ${error}`);
   }
 
   const result = (await response.json()) as {
@@ -101,6 +106,6 @@ Respond with valid JSON only, no markdown:
     pros: parsed.pros,
     cons: parsed.cons,
     raw_response: text,
-    model: MODEL,
+    model: llm.model,
   };
 }

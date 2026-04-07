@@ -1,3 +1,4 @@
+import { parse } from "node-html-parser";
 import type { PropertyInsert, ProviderSearchParams } from "@property-agg/shared";
 import type { PropertyProvider, ProviderResult } from "./interface.js";
 
@@ -38,24 +39,50 @@ interface IdealistaResponse {
 
 export class IdealistaProvider implements PropertyProvider {
   readonly name = "idealista";
-  readonly type = "api" as const;
+  readonly type: "api" | "scraper";
 
   private token: string | null = null;
   private tokenExpiry = 0;
+  private apiKey: string | null;
+  private apiSecret: string | null;
+  private baseUrl = "https://www.idealista.pt";
 
-  constructor(
-    private apiKey: string,
-    private apiSecret: string
-  ) {}
+  constructor(apiKey?: string, apiSecret?: string) {
+    this.apiKey = apiKey || null;
+    this.apiSecret = apiSecret || null;
+    this.type = this.apiKey && this.apiSecret ? "api" : "scraper";
+  }
 
   async search(params: ProviderSearchParams): Promise<ProviderResult> {
+    if (this.apiKey && this.apiSecret) {
+      return this.searchApi(params);
+    }
+    return this.searchScrape(params);
+  }
+
+  async healthCheck(): Promise<boolean> {
+    try {
+      if (this.apiKey && this.apiSecret) {
+        await this.ensureToken();
+        return true;
+      }
+      const response = await fetch(this.baseUrl, { method: "HEAD" });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // --- API mode ---
+
+  private async searchApi(params: ProviderSearchParams): Promise<ProviderResult> {
     await this.ensureToken();
 
     const searchParams = new URLSearchParams({
       operation: params.operation === "rent" ? "rent" : "sale",
       country: "pt",
       propertyType: this.mapPropertyTypes(params.propertyTypes),
-      center: "38.7223,-9.1393", // Default: Lisbon center
+      center: "38.7223,-9.1393",
       distance: "15000",
       numPage: String(params.page ?? 1),
       maxItems: String(params.pageSize ?? 20),
@@ -85,20 +112,11 @@ export class IdealistaProvider implements PropertyProvider {
     const data = (await response.json()) as IdealistaResponse;
 
     return {
-      properties: data.elementList.map((item) => this.mapListing(item, params.operation)),
+      properties: data.elementList.map((item) => this.mapApiListing(item, params.operation)),
       totalResults: data.total,
       hasMorePages: data.actualPage < data.totalPages,
       currentPage: data.actualPage,
     };
-  }
-
-  async healthCheck(): Promise<boolean> {
-    try {
-      await this.ensureToken();
-      return true;
-    } catch {
-      return false;
-    }
   }
 
   private async ensureToken(): Promise<void> {
@@ -123,8 +141,138 @@ export class IdealistaProvider implements PropertyProvider {
       expires_in: number;
     };
     this.token = data.access_token;
-    this.tokenExpiry = Date.now() + data.expires_in * 1000 - 60_000; // Refresh 1 min early
+    this.tokenExpiry = Date.now() + data.expires_in * 1000 - 60_000;
   }
+
+  // --- Scraper mode ---
+
+  private async searchScrape(params: ProviderSearchParams): Promise<ProviderResult> {
+    const operationPath = params.operation === "rent" ? "/arrendar" : "/comprar";
+    const typePath = this.mapPropertyTypePath(params.propertyTypes);
+    const locationPath = params.districts?.length
+      ? `/${this.normalizeLocation(params.districts[0])}`
+      : "/lisboa";
+
+    const url = new URL(
+      `${operationPath}${typePath}${locationPath}/`,
+      this.baseUrl
+    );
+
+    if (params.minPrice) url.searchParams.set("minPrice", String(params.minPrice));
+    if (params.maxPrice) url.searchParams.set("maxPrice", String(params.maxPrice));
+    if (params.minArea) url.searchParams.set("minSize", String(params.minArea));
+    if (params.maxArea) url.searchParams.set("maxSize", String(params.maxArea));
+    if (params.minRooms) url.searchParams.set("minRooms", String(params.minRooms));
+    if (params.maxRooms) url.searchParams.set("maxRooms", String(params.maxRooms));
+    if (params.page && params.page > 1) url.searchParams.set("pagina", String(params.page));
+
+    url.searchParams.set("ordenado-por", "fecha-publicacion-desc");
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml",
+        "Accept-Language": "pt-PT,pt;q=0.9,en;q=0.8",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Idealista scrape failed: ${response.status}`);
+    }
+
+    const html = await response.text();
+    return this.parseHtml(html, params);
+  }
+
+  private parseHtml(html: string, params: ProviderSearchParams): ProviderResult {
+    const root = parse(html);
+    const properties: PropertyInsert[] = [];
+
+    const cards = root.querySelectorAll("article.item");
+
+    for (const card of cards) {
+      try {
+        const link = card.querySelector("a.item-link");
+        const href = link?.getAttribute("href") || "";
+        if (!href) continue;
+        const fullUrl = href.startsWith("http") ? href : `${this.baseUrl}${href}`;
+
+        const titleEl = card.querySelector("a.item-link");
+        const priceEl = card.querySelector(".item-price");
+        const detailNodes = card.querySelectorAll(".item-detail span");
+        const imgEl = card.querySelector("img");
+        const parkingEl = card.querySelector(".item-parking");
+
+        const title = titleEl?.text.trim() || "Idealista Property";
+        const price = this.parsePrice(priceEl?.text.trim());
+        if (!price) continue;
+
+        const externalId = this.extractId(href);
+
+        let rooms: number | null = null;
+        let area: number | null = null;
+        let floor: string | null = null;
+
+        for (const detail of detailNodes) {
+          const text = detail.text.trim();
+          if (text.includes("m²")) {
+            area = this.parseArea(text);
+          } else if (/\d+\s*(quarto|hab|T\d)/i.test(text)) {
+            rooms = this.parseNumber(text);
+          } else if (/\d+[ºª°]\s*(andar)?/i.test(text) || /rés-do-chão|cave|sótão/i.test(text)) {
+            floor = text;
+          }
+        }
+
+        const imgSrc = imgEl?.getAttribute("src") || imgEl?.getAttribute("data-src") || "";
+
+        properties.push({
+          external_id: externalId,
+          provider: "idealista",
+          url: fullUrl,
+          title,
+          description: null,
+          operation: params.operation,
+          property_type: "apartment",
+          price_cents: price,
+          price_period: params.operation === "rent" ? "month" : null,
+          area_m2: area,
+          rooms,
+          bathrooms: null,
+          floor,
+          has_elevator: false,
+          has_parking: !!parkingEl,
+          has_terrace: false,
+          energy_rating: null,
+          condition: null,
+          latitude: null,
+          longitude: null,
+          district: params.districts?.[0] || null,
+          municipality: null,
+          parish: null,
+          address: null,
+          images: imgSrc ? [imgSrc] : [],
+        });
+      } catch (err) {
+        console.error("Failed to parse Idealista card:", err);
+      }
+    }
+
+    const totalEl = root.querySelector(".listing-title span, .breadcrumb-subitems");
+    const totalResults = this.parseNumber(totalEl?.text.trim()) || properties.length;
+
+    const nextPage = root.querySelector(".pagination .next a");
+
+    return {
+      properties,
+      totalResults,
+      hasMorePages: !!nextPage,
+      currentPage: params.page ?? 1,
+    };
+  }
+
+  // --- Mapping helpers ---
 
   private mapPropertyTypes(types?: string[]): string {
     if (!types || types.length === 0) return "homes";
@@ -138,7 +286,19 @@ export class IdealistaProvider implements PropertyProvider {
     return types.map((t) => map[t] || "homes").join(",");
   }
 
-  private mapListing(item: IdealistaListing, operation: string): PropertyInsert {
+  private mapPropertyTypePath(types?: string[]): string {
+    if (!types || types.length === 0) return "/casas";
+    const map: Record<string, string> = {
+      apartment: "/apartamentos",
+      house: "/moradias",
+      room: "/quartos",
+      land: "/terrenos",
+      commercial: "/escritorios",
+    };
+    return map[types[0]] || "/casas";
+  }
+
+  private mapApiListing(item: IdealistaListing, operation: string): PropertyInsert {
     return {
       external_id: item.propertyCode,
       provider: "idealista",
@@ -196,5 +356,37 @@ export class IdealistaProvider implements PropertyProvider {
       renew: "renovation_needed",
     };
     return map[status] || null;
+  }
+
+  private normalizeLocation(location: string): string {
+    return location
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "-");
+  }
+
+  private parsePrice(text?: string): number | null {
+    if (!text) return null;
+    const cleaned = text.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", ".");
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? null : Math.round(num * 100);
+  }
+
+  private parseArea(text?: string): number | null {
+    if (!text) return null;
+    const match = text.match(/([\d.,]+)\s*m/);
+    return match ? parseFloat(match[1].replace(",", ".")) || null : null;
+  }
+
+  private parseNumber(text?: string): number | null {
+    if (!text) return null;
+    const match = text.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : null;
+  }
+
+  private extractId(href: string): string {
+    const match = href.match(/(\d{5,})/);
+    return match ? match[1] : href.replace(/[^a-zA-Z0-9]/g, "-").slice(0, 50);
   }
 }

@@ -1,0 +1,29 @@
+{
+  "name": "property-agg-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-01",
+  "triggers": {
+    "crons": ["0 */2 * * *", "0 */6 * * *", "0 3 * * *"]
+  },
+  "routes": [
+    { "pattern": "real-estate.api.goncalo2k.com", "custom_domain": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "estate-db",
+      "database_id": "51682c6c-31dc-46a5-b955-bc217eb2f5de",
+      "migrations_dir": "src/db/migrations"
+    }
+  ],
+  "vars": {
+    "NOTIFICATION_EMAIL_FROM": "imoveis@goncalo2k.com",
+    "LLM_BASE_URL": "https://cst-ai-proxy.azurewebsites.net/api/anthropic",
+    "LLM_MODEL": "claude-sonnet-4-6"
+  },
+  "secrets": {
+    "required": [
+      "LLM_API_KEY"
+    ]
+  }
+}

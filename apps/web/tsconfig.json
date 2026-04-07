@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["@cloudflare/workers-types"],
+    "types": ["vite/client", "@cloudflare/workers-types"],
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "noEmit": true
   },

@@ -5,11 +5,25 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "test": "turbo test",
-    "lint": "turbo lint"
+    "lint": "turbo lint",
+    "db:migrate:local": "pnpm --filter @property-agg/api db:migrate:local",
+    "db:migrate:prod": "pnpm --filter @property-agg/api db:migrate:remote",
+    "trigger": "pnpm --filter @property-agg/api trigger",
+    "trigger:scrape": "pnpm --filter @property-agg/api trigger:scrape",
+    "trigger:analyze": "pnpm --filter @property-agg/api trigger:analyze",
+    "trigger:notify": "pnpm --filter @property-agg/api trigger:notify",
+    "trigger:stale": "pnpm --filter @property-agg/api trigger:stale",
+    "seed": "bash scripts/seed.sh",
+    "secret": "pnpm --filter @property-agg/api exec wrangler secret put",
+    "secrets": "pnpm secret LLM_API_KEY && pnpm secret IDEALISTA_API_KEY && pnpm secret IDEALISTA_API_SECRET",
+    "ship": "bash scripts/deploy.sh",
+    "ship:api": "pnpm db:migrate:prod && pnpm --filter @property-agg/api ship",
+    "ship:web": "pnpm --filter @property-agg/web build && pnpm --filter @property-agg/web ship"
   },
   "devDependencies": {
     "turbo": "^2"
   },
+  "packageManager": "pnpm@10.33.0",
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",

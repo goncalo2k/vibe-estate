@@ -43,7 +43,11 @@ export const analysisRoutes = new Hono<AppEnv>()
 
     const analysis = await analyzeProperty(
       rowToProperty(property),
-      c.env.ANTHROPIC_API_KEY
+      {
+        apiKey: c.env.LLM_API_KEY,
+        baseUrl: c.env.LLM_BASE_URL,
+        model: c.env.LLM_MODEL,
+      }
     );
 
     const id = generateId();

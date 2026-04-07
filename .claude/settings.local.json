@@ -4,7 +4,8 @@
       "Bash(npm --version)",
       "Bash(pnpm --version)",
       "Bash(pnpm install:*)",
-      "Bash(pnpm:*)"
+      "Bash(pnpm:*)",
+      "Bash(chmod +x:*)"
     ]
   }
 }
