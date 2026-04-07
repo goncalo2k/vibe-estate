@@ -1,0 +1,33 @@
+{
+  "name": "@property-agg/web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@property-agg/shared": "workspace:*",
+    "@tanstack/react-query": "^5",
+    "hono": "^4",
+    "react": "^19",
+    "react-dom": "^19",
+    "react-router-dom": "^7",
+    "zod": "^3.23"
+  },
+  "devDependencies": {
+    "@property-agg/api": "workspace:*",
+    "@cloudflare/workers-types": "^4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "autoprefixer": "^10",
+    "postcss": "^8",
+    "tailwindcss": "^4",
+    "@tailwindcss/vite": "^4",
+    "typescript": "^5.7",
+    "vite": "^6"
+  }
+}
