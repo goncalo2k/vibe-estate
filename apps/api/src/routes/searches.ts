@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { searchCreateSchema, searchUpdateSchema } from "@property-agg/shared";
 import type { AppEnv } from "../bindings.js";
 import { generateId, type SearchRow, rowToSearch } from "../db/queries.js";
+import { runScrapeJob } from "../services/scraper.js";
 
 export const searchRoutes = new Hono<AppEnv>()
   .get("/", async (c) => {
@@ -49,6 +50,8 @@ export const searchRoutes = new Hono<AppEnv>()
       .prepare("SELECT * FROM searches WHERE id = ?")
       .bind(id)
       .first<SearchRow>();
+
+    c.executionCtx.waitUntil(runScrapeJob(c.env));
 
     return c.json({ data: rowToSearch(row!) }, 201);
   })

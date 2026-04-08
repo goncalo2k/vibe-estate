@@ -1,11 +1,19 @@
 {
   "name": "property-agg-web",
+  "main": "src/worker.ts",
   "compatibility_date": "2025-01-01",
   "assets": {
     "directory": "dist",
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
   "routes": [
     { "pattern": "real-estate.goncalo2k.com", "custom_domain": true }
+  ],
+  "services": [
+    {
+      "binding": "API",
+      "service": "property-agg-api"
+    }
   ]
 }

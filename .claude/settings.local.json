@@ -5,7 +5,13 @@
       "Bash(pnpm --version)",
       "Bash(pnpm install:*)",
       "Bash(pnpm:*)",
-      "Bash(chmod +x:*)"
+      "Bash(chmod +x:*)",
+      "Bash(curl:*)",
+      "Bash(npx wrangler:*)",
+      "Bash(kill %1)",
+      "WebFetch(domain:www.imovirtual.com)",
+      "WebFetch(domain:www.remax.pt)",
+      "Bash(python3:*)"
     ]
   }
 }

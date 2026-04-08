@@ -18,7 +18,9 @@
     "secrets": "pnpm secret LLM_API_KEY && pnpm secret IDEALISTA_API_KEY && pnpm secret IDEALISTA_API_SECRET",
     "ship": "bash scripts/deploy.sh",
     "ship:api": "pnpm db:migrate:prod && pnpm --filter @property-agg/api ship",
-    "ship:web": "pnpm --filter @property-agg/web build && pnpm --filter @property-agg/web ship"
+    "ship:web": "pnpm --filter @property-agg/web build && pnpm --filter @property-agg/web ship",
+    "tail:be": "bash scripts/tail-be.sh",
+    "tail:fe": "bash scripts/tail-fe.sh"
   },
   "devDependencies": {
     "turbo": "^2"

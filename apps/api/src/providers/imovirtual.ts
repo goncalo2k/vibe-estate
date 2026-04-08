@@ -17,31 +17,37 @@ interface ImovirtualNextData {
 
 interface ImovirtualItem {
   id: number;
-  slug: string;
   title: string;
-  description?: string;
+  slug: string;
+  estate: string;
+  transaction: string;
+  shortDescription?: string;
   totalPrice?: { value: number; currency: string };
   rentPrice?: { value: number; currency: string };
   areaInSquareMeters?: number;
-  roomsNumber?: number;
-  bathroomsNumber?: number;
-  floor?: string;
-  features?: string[];
+  terrainAreaInSquareMeters?: number;
+  roomsNumber?: string;
+  floorNumber?: number;
+  href?: string;
   location?: {
-    address?: { street?: { name?: string } };
-    mapDetails?: { latitude: number; longitude: number };
+    address?: { street?: string | null; city?: { name: string }; province?: { name: string } };
+    mapDetails?: { radius?: number };
     reverseGeocoding?: {
       locations?: Array<{
         id: string;
         fullName: string;
+        name: string;
+        locationLevel: string;
       }>;
     };
   };
   images?: Array<{ medium?: string; large?: string }>;
-  developmentType?: string;
-  buildingCondition?: string;
-  energyCertification?: string;
 }
+
+const ROOMS_MAP: Record<string, number> = {
+  ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5,
+  SIX: 6, SEVEN: 7, EIGHT: 8, NINE: 9, TEN: 10,
+};
 
 export class ImovirtualProvider implements PropertyProvider {
   readonly name = "imovirtual";
@@ -217,35 +223,39 @@ export class ImovirtualProvider implements PropertyProvider {
     const price = item.totalPrice?.value ?? item.rentPrice?.value;
     if (!price) return null;
 
-    const locationParts = item.location?.reverseGeocoding?.locations || [];
-    const district = locationParts.length > 0 ? locationParts[locationParts.length - 1]?.fullName : null;
-    const municipality = locationParts.length > 1 ? locationParts[locationParts.length - 2]?.fullName : null;
+    const locations = item.location?.reverseGeocoding?.locations || [];
+    const district = locations.find((l) => l.locationLevel === "district")?.name ?? null;
+    const municipality = locations.find((l) => l.locationLevel === "council")?.name ?? null;
+    const parish = locations.find((l) => l.locationLevel === "parish")?.name ?? null;
+
+    const slug = item.slug || `${item.id}`;
+    const url = `${this.baseUrl}/pt/anuncio/${slug}`;
 
     return {
       external_id: String(item.id),
       provider: "imovirtual",
-      url: `${this.baseUrl}/pt/anuncio/${item.slug}-ID${item.id}`,
+      url,
       title: item.title,
-      description: item.description || null,
+      description: item.shortDescription || null,
       operation: params.operation,
-      property_type: this.mapPropertyType(item.developmentType),
+      property_type: this.mapPropertyType(item.estate),
       price_cents: Math.round(price * 100),
       price_period: params.operation === "rent" ? "month" : null,
       area_m2: item.areaInSquareMeters || null,
-      rooms: item.roomsNumber ?? null,
-      bathrooms: item.bathroomsNumber ?? null,
-      floor: item.floor || null,
-      has_elevator: item.features?.includes("elevator") ?? false,
-      has_parking: item.features?.includes("parking") ?? false,
-      has_terrace: item.features?.includes("terrace") ?? false,
-      energy_rating: item.energyCertification || null,
-      condition: this.mapCondition(item.buildingCondition),
-      latitude: item.location?.mapDetails?.latitude ?? null,
-      longitude: item.location?.mapDetails?.longitude ?? null,
-      district: district || null,
-      municipality: municipality || null,
-      parish: null,
-      address: item.location?.address?.street?.name || null,
+      rooms: item.roomsNumber ? (ROOMS_MAP[item.roomsNumber] ?? null) : null,
+      bathrooms: null,
+      floor: item.floorNumber != null ? String(item.floorNumber) : null,
+      has_elevator: false,
+      has_parking: false,
+      has_terrace: false,
+      energy_rating: null,
+      condition: null,
+      latitude: null,
+      longitude: null,
+      district,
+      municipality,
+      parish,
+      address: item.location?.address?.street || null,
       images: (item.images || [])
         .map((img) => img.large || img.medium || "")
         .filter(Boolean),
@@ -253,30 +263,20 @@ export class ImovirtualProvider implements PropertyProvider {
   }
 
   private mapPropertyType(
-    type?: string
+    estate?: string
   ): "apartment" | "house" | "room" | "land" | "commercial" {
-    if (!type) return "apartment";
+    if (!estate) return "apartment";
     const map: Record<string, "apartment" | "house" | "room" | "land" | "commercial"> = {
+      FLAT: "apartment",
       APARTMENT: "apartment",
       HOUSE: "house",
+      TERRAIN: "land",
       ROOM: "room",
-      LAND: "land",
       COMMERCIAL: "commercial",
+      OFFICE: "commercial",
+      GARAGE: "commercial",
     };
-    return map[type.toUpperCase()] || "apartment";
-  }
-
-  private mapCondition(
-    condition?: string
-  ): "new" | "good" | "renovation_needed" | "under_construction" | null {
-    if (!condition) return null;
-    const map: Record<string, "new" | "good" | "renovation_needed" | "under_construction"> = {
-      NEW: "new",
-      GOOD: "good",
-      TO_RENOVATE: "renovation_needed",
-      UNDER_CONSTRUCTION: "under_construction",
-    };
-    return map[condition.toUpperCase()] || null;
+    return map[estate.toUpperCase()] || "apartment";
   }
 
   private mapPropertyTypePath(types?: string[]): string {
