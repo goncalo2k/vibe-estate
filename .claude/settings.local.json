@@ -11,7 +11,22 @@
       "Bash(kill %1)",
       "WebFetch(domain:www.imovirtual.com)",
       "WebFetch(domain:www.remax.pt)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(npx tsc:*)",
+      "Bash(sqlite3 /Users/mirandagoncalomiranda/Desktop/claude-proj/apps/api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/71ebb234f96d41eb28115ebcfe018c4705ae9ea5f1f345a95f386131ac5678f4.sqlite 'SELECT DISTINCT district, COUNT\\(*\\) FROM properties GROUP BY district;')",
+      "Bash(sqlite3 /Users/mirandagoncalomiranda/Desktop/claude-proj/apps/api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/71ebb234f96d41eb28115ebcfe018c4705ae9ea5f1f345a95f386131ac5678f4.sqlite 'SELECT DISTINCT municipality, COUNT\\(*\\) FROM properties GROUP BY municipality;')",
+      "Bash(sqlite3 /Users/mirandagoncalomiranda/Desktop/claude-proj/apps/api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/71ebb234f96d41eb28115ebcfe018c4705ae9ea5f1f345a95f386131ac5678f4.sqlite 'SELECT DISTINCT provider, COUNT\\(*\\) FROM properties GROUP BY provider;')",
+      "Bash(sqlite3 /Users/mirandagoncalomiranda/Desktop/claude-proj/apps/api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/71ebb234f96d41eb28115ebcfe018c4705ae9ea5f1f345a95f386131ac5678f4.sqlite 'SELECT id, name, operation, districts, municipalities FROM searches;')",
+      "WebFetch(domain:casa.sapo.pt)",
+      "WebFetch(domain:supercasa.pt)",
+      "Read(//private/tmp/**)",
+      "Bash(grep -oE 'class=\"[^\"]{0,80}\"' /tmp/era.html)",
+      "Bash(grep -oE 'class=\"[^\"]{0,100}\"' /tmp/casasapo3.html)",
+      "Bash([ ! -s /tmp/custojusto_next.json ])",
+      "Bash(sed -n 's/.*<script id=\"__NEXT_DATA__\" type=\"application\\\\/json\">\\\\\\(.*\\\\\\)<\\\\/script>.*/\\\\1/p' /tmp/custojusto.html)",
+      "Bash(node:*)",
+      "Bash(sqlite3 /Users/mirandagoncalomiranda/Desktop/claude-proj/apps/api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/71ebb234f96d41eb28115ebcfe018c4705ae9ea5f1f345a95f386131ac5678f4.sqlite 'SELECT id, name, operation, districts, municipalities, providers FROM searches;')",
+      "Bash(sqlite3 /Users/mirandagoncalomiranda/Desktop/claude-proj/apps/api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/71ebb234f96d41eb28115ebcfe018c4705ae9ea5f1f345a95f386131ac5678f4.sqlite 'SELECT provider, status, properties_found, properties_new, error_message FROM scrape_runs ORDER BY started_at DESC LIMIT 10;')"
     ]
   }
 }

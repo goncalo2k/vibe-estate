@@ -12,6 +12,7 @@ export interface PropertyFilters {
   max_rooms?: number;
   district?: string;
   municipality?: string;
+  parish?: string;
   provider?: string;
   sort_by?: string;
   sort_order?: string;
@@ -33,6 +34,21 @@ export function useProperties(filters: PropertyFilters) {
       if (!res.ok) throw new Error("Failed to fetch properties");
       return res.json();
     },
+  });
+}
+
+export function useLocations(district?: string, municipality?: string) {
+  return useQuery({
+    queryKey: ["locations", district, municipality],
+    queryFn: async () => {
+      const query: Record<string, string> = {};
+      if (district) query.district = district;
+      if (municipality) query.municipality = municipality;
+      const res = await client.api.properties.locations.$get({ query: query as any });
+      if (!res.ok) throw new Error("Failed to fetch locations");
+      return res.json();
+    },
+    enabled: !!district,
   });
 }
 

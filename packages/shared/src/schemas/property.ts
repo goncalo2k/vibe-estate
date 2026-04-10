@@ -24,6 +24,8 @@ export const providerNameSchema = z.enum([
   "idealista",
   "remax",
   "imovirtual",
+  "casasapo",
+  "custojusto",
 ]);
 export type ProviderName = z.infer<typeof providerNameSchema>;
 
@@ -85,6 +87,7 @@ export const propertyFiltersSchema = z.object({
   max_rooms: z.coerce.number().int().optional(),
   district: z.string().optional(),
   municipality: z.string().optional(),
+  parish: z.string().optional(),
   provider: providerNameSchema.optional(),
   sort_by: z
     .enum(["price", "area", "created_at", "score"])

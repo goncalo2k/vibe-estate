@@ -54,6 +54,8 @@ export function providerLabel(provider: string): string {
     idealista: "Idealista",
     remax: "RE/MAX",
     imovirtual: "Imovirtual",
+    casasapo: "Casa Sapo",
+    custojusto: "CustoJusto",
   };
   return labels[provider] || provider;
 }

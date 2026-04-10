@@ -4,6 +4,14 @@ export function generateId(): string {
   return crypto.randomUUID();
 }
 
+/** Coerce a value to a D1-bindable primitive. Objects get stringified. */
+function bind(v: unknown): string | number | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "string" || typeof v === "number") return v;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return String(v);
+}
+
 // --- Properties ---
 
 export async function upsertProperty(
@@ -31,25 +39,25 @@ export async function upsertProperty(
         WHERE id = ?`
       )
       .bind(
-        property.title,
-        property.description,
-        property.price_cents,
-        property.price_period,
-        property.area_m2,
-        property.rooms,
-        property.bathrooms,
-        property.floor,
+        bind(property.title),
+        bind(property.description),
+        bind(property.price_cents),
+        bind(property.price_period),
+        bind(property.area_m2),
+        bind(property.rooms),
+        bind(property.bathrooms),
+        bind(property.floor),
         property.has_elevator ? 1 : 0,
         property.has_parking ? 1 : 0,
         property.has_terrace ? 1 : 0,
-        property.energy_rating,
-        property.condition,
-        property.latitude,
-        property.longitude,
-        property.district,
-        property.municipality,
-        property.parish,
-        property.address,
+        bind(property.energy_rating),
+        bind(property.condition),
+        bind(property.latitude),
+        bind(property.longitude),
+        bind(property.district),
+        bind(property.municipality),
+        bind(property.parish),
+        bind(property.address),
         JSON.stringify(property.images),
         existing.id
       )
@@ -73,30 +81,30 @@ export async function upsertProperty(
     )
     .bind(
       id,
-      property.external_id,
-      property.provider,
-      property.url,
-      property.title,
-      property.description,
-      property.operation,
-      property.property_type,
-      property.price_cents,
-      property.price_period,
-      property.area_m2,
-      property.rooms,
-      property.bathrooms,
-      property.floor,
+      bind(property.external_id),
+      bind(property.provider),
+      bind(property.url),
+      bind(property.title),
+      bind(property.description),
+      bind(property.operation),
+      bind(property.property_type),
+      bind(property.price_cents),
+      bind(property.price_period),
+      bind(property.area_m2),
+      bind(property.rooms),
+      bind(property.bathrooms),
+      bind(property.floor),
       property.has_elevator ? 1 : 0,
       property.has_parking ? 1 : 0,
       property.has_terrace ? 1 : 0,
-      property.energy_rating,
-      property.condition,
-      property.latitude,
-      property.longitude,
-      property.district,
-      property.municipality,
-      property.parish,
-      property.address,
+      bind(property.energy_rating),
+      bind(property.condition),
+      bind(property.latitude),
+      bind(property.longitude),
+      bind(property.district),
+      bind(property.municipality),
+      bind(property.parish),
+      bind(property.address),
       JSON.stringify(property.images)
     )
     .run();

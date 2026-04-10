@@ -156,9 +156,9 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
       )}
 
       {/* AI Analysis */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900">Análise AI</h2>
+      <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 sm:px-5 sm:py-4">
+          <h2 className="text-base font-semibold text-gray-900 sm:text-lg">Análise AI</h2>
           {!property.analysis && (
             <Button
               size="sm"
@@ -171,34 +171,54 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         </div>
 
         {property.analysis ? (
-          <div>
-            <div className="mb-3 flex items-center gap-3">
-              <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium text-white ${ratingColor(property.analysis.rating)}`}>
-                {ratingLabel(property.analysis.rating)}
-                {property.analysis.score != null && ` — ${property.analysis.score}/100`}
-              </span>
+          <div className="px-4 py-4 sm:px-5 sm:py-5">
+            {/* Score + Rating */}
+            <div className="mb-4 flex flex-col items-center gap-3 rounded-lg bg-gray-50 px-4 py-4 sm:flex-row sm:gap-4">
+              {property.analysis.score != null && (
+                <div className="flex flex-col items-center">
+                  <span className="text-3xl font-bold text-gray-900 sm:text-4xl">{property.analysis.score}</span>
+                  <span className="text-xs text-gray-500">/100</span>
+                </div>
+              )}
+              <div className="flex flex-col items-center gap-1 sm:items-start">
+                <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold text-white ${ratingColor(property.analysis.rating)}`}>
+                  {ratingLabel(property.analysis.rating)}
+                </span>
+              </div>
             </div>
-            <p className="mb-4 text-sm text-gray-700">{property.analysis.summary}</p>
-            <div className="grid gap-4 sm:grid-cols-2">
+
+            {/* Summary */}
+            <p className="mb-5 text-sm leading-relaxed text-gray-700 sm:text-base">{property.analysis.summary}</p>
+
+            {/* Pros & Cons */}
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
               {property.analysis.pros.length > 0 && (
-                <div>
-                  <h3 className="mb-1 text-sm font-medium text-green-700">Pontos positivos</h3>
-                  <ul className="space-y-1">
+                <div className="rounded-lg border border-green-100 bg-green-50/50 p-3 sm:p-4">
+                  <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-green-800">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-xs text-green-600">&#10003;</span>
+                    Pontos positivos
+                  </h3>
+                  <ul className="space-y-2">
                     {property.analysis.pros.map((p, i) => (
-                      <li key={i} className="flex items-start gap-1 text-sm text-gray-600">
-                        <span className="text-green-500">+</span> {p}
+                      <li key={i} className="flex items-start gap-2 text-sm leading-snug text-gray-700">
+                        <span className="mt-0.5 shrink-0 text-green-500">&bull;</span>
+                        <span>{p}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
               {property.analysis.cons.length > 0 && (
-                <div>
-                  <h3 className="mb-1 text-sm font-medium text-red-700">Pontos negativos</h3>
-                  <ul className="space-y-1">
+                <div className="rounded-lg border border-red-100 bg-red-50/50 p-3 sm:p-4">
+                  <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-red-800">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-xs text-red-600">&#10005;</span>
+                    Pontos negativos
+                  </h3>
+                  <ul className="space-y-2">
                     {property.analysis.cons.map((c, i) => (
-                      <li key={i} className="flex items-start gap-1 text-sm text-gray-600">
-                        <span className="text-red-500">-</span> {c}
+                      <li key={i} className="flex items-start gap-2 text-sm leading-snug text-gray-700">
+                        <span className="mt-0.5 shrink-0 text-red-500">&bull;</span>
+                        <span>{c}</span>
                       </li>
                     ))}
                   </ul>
@@ -207,9 +227,11 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-500">
-            Ainda sem análise. Clique em "Analisar" para gerar uma avaliação com AI.
-          </p>
+          <div className="px-4 py-6 text-center sm:px-5 sm:py-8">
+            <p className="text-sm text-gray-500">
+              Ainda sem análise. Clique em "Analisar" para gerar uma avaliação com AI.
+            </p>
+          </div>
         )}
       </div>
     </div>

@@ -15,6 +15,8 @@ export const PROVIDERS = [
   { value: "idealista", label: "Idealista" },
   { value: "remax", label: "RE/MAX" },
   { value: "imovirtual", label: "Imovirtual" },
+  { value: "casasapo", label: "Casa Sapo" },
+  { value: "custojusto", label: "CustoJusto" },
 ] as const;
 
 export const DISTRICTS = [

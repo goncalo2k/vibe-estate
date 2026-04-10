@@ -3,6 +3,7 @@ import Input from "../ui/Input";
 import Select from "../ui/Select";
 import Button from "../ui/Button";
 import type { PropertyFilters as Filters } from "../../hooks/useProperties";
+import { useLocations } from "../../hooks/useProperties";
 import { OPERATIONS, PROPERTY_TYPES, PROVIDERS, DISTRICTS, SORT_OPTIONS } from "../../lib/constants";
 
 interface PropertyFiltersProps {
@@ -12,6 +13,12 @@ interface PropertyFiltersProps {
 
 export default function PropertyFilters({ filters, onChange }: PropertyFiltersProps) {
   const [expanded, setExpanded] = useState(false);
+
+  const { data: munData } = useLocations(filters.district);
+  const { data: parData } = useLocations(filters.district, filters.municipality);
+
+  const municipalities = (munData as any)?.municipalities ?? [];
+  const parishes = (parData as any)?.parishes ?? [];
 
   const update = (key: string, value: string | number | undefined) => {
     const next = { ...filters, [key]: value || undefined, page: 1 };
@@ -35,9 +42,35 @@ export default function PropertyFilters({ filters, onChange }: PropertyFiltersPr
             options={DISTRICTS.map((d) => ({ value: d, label: d }))}
             value={filters.district || ""}
             placeholder="Distrito"
-            onChange={(e) => update("district", e.target.value)}
+            onChange={(e) => {
+              const next = { ...filters, district: e.target.value || undefined, municipality: undefined, parish: undefined, page: 1 };
+              onChange(next);
+            }}
           />
         </div>
+        {filters.district && municipalities.length > 0 && (
+          <div className="w-40">
+            <Select
+              options={municipalities.map((m: string) => ({ value: m, label: m }))}
+              value={filters.municipality || ""}
+              placeholder="Município"
+              onChange={(e) => {
+                const next = { ...filters, municipality: e.target.value || undefined, parish: undefined, page: 1 };
+                onChange(next);
+              }}
+            />
+          </div>
+        )}
+        {filters.municipality && parishes.length > 0 && (
+          <div className="w-44">
+            <Select
+              options={parishes.map((p: string) => ({ value: p, label: p }))}
+              value={filters.parish || ""}
+              placeholder="Freguesia"
+              onChange={(e) => update("parish", e.target.value)}
+            />
+          </div>
+        )}
         <div className="w-28">
           <Input
             type="number"

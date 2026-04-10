@@ -5,6 +5,29 @@ import type { AppEnv } from "../bindings.js";
 import { type PropertyRow, rowToProperty, rowToAnalysis, type AnalysisRow } from "../db/queries.js";
 
 export const propertyRoutes = new Hono<AppEnv>()
+  .get("/locations", async (c) => {
+    const db = c.env.DB;
+    const district = c.req.query("district");
+    const municipality = c.req.query("municipality");
+
+    if (municipality && district) {
+      const rows = await db
+        .prepare("SELECT DISTINCT parish FROM properties WHERE is_active = 1 AND district = ? AND municipality = ? AND parish IS NOT NULL ORDER BY parish")
+        .bind(district, municipality)
+        .all<{ parish: string }>();
+      return c.json({ parishes: rows.results.map((r) => r.parish) });
+    }
+
+    if (district) {
+      const rows = await db
+        .prepare("SELECT DISTINCT municipality FROM properties WHERE is_active = 1 AND district = ? AND municipality IS NOT NULL ORDER BY municipality")
+        .bind(district)
+        .all<{ municipality: string }>();
+      return c.json({ municipalities: rows.results.map((r) => r.municipality) });
+    }
+
+    return c.json({ municipalities: [], parishes: [] });
+  })
   .get("/", zValidator("query", propertyFiltersSchema), async (c) => {
     const filters = c.req.valid("query");
     const db = c.env.DB;
@@ -51,6 +74,10 @@ export const propertyRoutes = new Hono<AppEnv>()
     if (filters.municipality) {
       conditions.push("p.municipality = ?");
       params.push(filters.municipality);
+    }
+    if (filters.parish) {
+      conditions.push("p.parish = ?");
+      params.push(filters.parish);
     }
     if (filters.provider) {
       conditions.push("p.provider = ?");

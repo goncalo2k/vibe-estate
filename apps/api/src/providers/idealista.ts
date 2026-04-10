@@ -57,7 +57,9 @@ export class IdealistaProvider implements PropertyProvider {
     if (this.apiKey && this.apiSecret) {
       return this.searchApi(params);
     }
-    return this.searchScrape(params);
+    // Idealista uses Datadome captcha — scraping is impossible without API keys
+    console.warn("Idealista: skipped — no API keys configured (set IDEALISTA_API_KEY and IDEALISTA_API_SECRET)");
+    return { properties: [], totalResults: 0, hasMorePages: false, currentPage: params.page ?? 1 };
   }
 
   async healthCheck(): Promise<boolean> {

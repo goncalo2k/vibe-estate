@@ -17,6 +17,7 @@ function filtersFromSearchParams(params: URLSearchParams): Filters {
   f.property_type = str("property_type");
   f.district = str("district");
   f.municipality = str("municipality");
+  f.parish = str("parish");
   f.provider = str("provider");
   f.sort_by = str("sort_by");
   f.sort_order = str("sort_order");
